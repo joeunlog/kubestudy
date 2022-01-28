@@ -4,7 +4,7 @@
 ### CMD
 
 ```jsx
-# in vagrant directory
+# at vagrant directory
 
 vagrant init
 
