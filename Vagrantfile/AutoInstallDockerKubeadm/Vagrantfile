@@ -1,0 +1,50 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  config.vm.define "k8s-m1" do |ubuntu|
+    ubuntu.vm.box = "ubuntu/focal64"
+    ubuntu.vm.hostname = "k8s-m1"
+    ubuntu.vm.network "private_network", ip: "192.168.201.11"
+    ubuntu.vm.provider "virtualbox" do |vb|
+      vb.name   = "k8s-m1"
+      vb.cpus   = 2
+      vb.memory = 2048
+    end
+  end
+
+  config.vm.define "k8s-w1" do |ubuntu|
+    ubuntu.vm.box = "ubuntu/focal64"
+    ubuntu.vm.hostname = "k8s-w1"
+    ubuntu.vm.network "private_network", ip: "192.168.201.21"
+    ubuntu.vm.provider "virtualbox" do |vb|
+      vb.name   = "k8s-w1"
+      vb.cpus   = 2
+      vb.memory = 2048
+    end
+  end
+
+  config.vm.define "k8s-w2" do |ubuntu|
+    ubuntu.vm.box = "ubuntu/focal64"
+    ubuntu.vm.hostname = "k8s-w2"
+    ubuntu.vm.network "private_network", ip: "192.168.201.22"
+    ubuntu.vm.provider "virtualbox" do |vb|
+      vb.name   = "k8s-w2"
+      vb.cpus   = 2
+      vb.memory = 2048
+    end
+  end
+
+  config.vm.define "k8s-w3" do |ubuntu|
+    ubuntu.vm.box = "ubuntu/focal64"
+    ubuntu.vm.hostname = "k8s-w3"
+    ubuntu.vm.network "private_network", ip: "192.168.201.23"
+    ubuntu.vm.provider "virtualbox" do |vb|
+      vb.name   = "k8s-w3"
+      vb.cpus   = 2
+      vb.memory = 2048
+    end
+  end
+
+  config.vm.provision "shell", path: "script.sh"
+end
