@@ -1,0 +1,159 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: eks-ojt-test
+  region: ap-northeast-2
+  version: "1.21"
+  tags:
+    enviroment: development
+
+vpc:
+  cidr: "10.10.0.0/16"
+  autoAllocateIPv6: false
+  # publicAccessCIDRs: ["211.60.50.130/32"] #,"61.79.201.235/32"
+  clusterEndpoints:
+    publicAccess: true
+    privateAccess: true
+  nat:
+    gateway: Single
+
+availabilityZones: ["ap-northeast-2a","ap-northeast-2b","ap-northeast-2c"]
+
+cloudWatch:
+  clusterLogging:
+    enableTypes: ["audit", "authenticator"]
+
+iam:
+  withOIDC: true
+
+nodeGroups:
+  - name: spot
+    minSize: 1
+    maxSize: 2
+    volumeType: gp3
+    volumeSize: 30
+    volumeEncrypted: true
+    instancesDistribution:
+      maxPrice: 0.058
+      instanceTypes: ["t3a.xlarge"]
+      onDemandBaseCapacity: 0
+      onDemandPercentageAboveBaseCapacity: 0
+      spotAllocationStrategy: capacity-optimized
+    labels:
+      role: spot
+      lifecycle: Ec2Spot
+      aws.amazon.com/spot: "true"
+    availabilityZones: ["ap-northeast-2a","ap-northeast-2c"]
+    taints:
+      spotInstance: "true:PreferNoSchedule"
+    tags:
+      nodegroup-role: spot
+      k8s.io/cluster-autoscaler/node-template/label/lifecycle: Ec2Spot
+      k8s.io/cluster-autoscaler/node-template/label/aws.amazon.com/spot: "true"
+      k8s.io/cluster-autoscaler/node-template/taint/spotInstance: "true:PreferNoSchedule"
+      k8s.io/cluster-autoscaler/enabled: "true"
+      k8s.io/cluster-autoscaler/eksworkshop: "owned"
+    privateNetworking: true
+    disableIMDSv1: true
+    ssh:
+      enableSsm: true
+    kubeletExtraConfig:
+      featureGates:
+        CSIMigrationAWS: true
+        RotateKubeletServerCertificate: true
+
+managedNodeGroups:
+  - name: management
+    instanceType: t3.small
+    minSize: 1
+    desiredCapacity: 1
+    maxSize: 2
+    volumeType: gp2
+    volumeSize: 30
+    ssh:
+      enableSsm: true
+    labels:
+      role: management
+      node-class: "management-node"
+      lifecycle: OnDemand
+    tags:
+      nodegroup-role: management
+      k8s.io/cluster-autoscaler/node-template/label/lifecycle: OnDemand
+      k8s.io/cluster-autoscaler/node-template/taint/dedicated: "management:NoSchedule"
+      k8s.io/cluster-autoscaler/enabled: "true"
+      k8s.io/cluster-autoscaler/eksworkshop: "owned"
+    privateNetworking: true
+    disableIMDSv1: true
+    preBootstrapCommands:
+      - "sed -i '/^KUBELET_EXTRA_ARGS=/a KUBELET_EXTRA_ARGS+=\" --register-with-taints=dedicated=management:NoSchedule --feature-gates=CSIMigrationAWS=true \"' /etc/eks/bootstrap.sh"
+  # - name: prometheus
+  #   instanceType: t3.small
+  #   minSize: 1
+  #   desiredCapacity: 1
+  #   maxSize: 2
+  #   volumeType: gp2
+  #   volumeSize: 30
+  #   ssh:
+  #     enableSsm: true
+  #   labels:
+  #     role: prometheus
+  #     node-class: "prometheus-node"
+  #     lifecycle: OnDemand
+  #   tags:
+  #     nodegroup-role: prometheus
+  #     k8s.io/cluster-autoscaler/node-template/label/lifecycle: OnDemand
+  #     k8s.io/cluster-autoscaler/node-template/taint/dedicated: "prometheus:NoSchedule"
+  #     k8s.io/cluster-autoscaler/enabled: "true"
+  #     k8s.io/cluster-autoscaler/eksworkshop: "owned"
+  #   privateNetworking: true
+  #   disableIMDSv1: true
+  #   preBootstrapCommands:
+  #     - "sed -i '/^KUBELET_EXTRA_ARGS=/a KUBELET_EXTRA_ARGS+=\" --register-with-taints=dedicated=prometheus:NoSchedule --feature-gates=CSIMigrationAWS=true \"' /etc/eks/bootstrap.sh"
+  # - name: gitlab
+  #   instanceType: t3.xlarge
+  #   minSize: 2
+  #   desiredCapacity: 2
+  #   maxSize: 4
+  #   volumeType: gp3
+  #   volumeSize: 30
+  #   ssh:
+  #     enableSsm: true
+  #   labels:
+  #     role: gitlab
+  #     node-class: "gitlab-node"
+  #     lifecycle: OnDemand
+  #   tags:
+  #     nodegroup-role: gitlab
+  #     k8s.io/cluster-autoscaler/node-template/label/lifecycle: OnDemand
+  #     k8s.io/cluster-autoscaler/node-template/taint/dedicated: "gitlab:PreferNoSchedule"
+  #     k8s.io/cluster-autoscaler/enabled: "true"
+  #     k8s.io/cluster-autoscaler/eksworkshop: "owned"
+  #   privateNetworking: true
+  #   disableIMDSv1: true
+  #   preBootstrapCommands:
+  #     - "sed -i '/^KUBELET_EXTRA_ARGS=/a KUBELET_EXTRA_ARGS+=\" --register-with-taints=dedicated=gitlab:PreferNoSchedule --feature-gates=CSIMigrationAWS=true \"' /etc/eks/bootstrap.sh"
+  # - name: apps
+  #   instanceType: t3.small
+  #   minSize: 1
+  #   desiredCapacity: 1
+  #   maxSize: 2
+  #   volumeType: gp2
+  #   volumeSize: 30
+  #   ssh:
+  #     enableSsm: true
+  #   labels:
+  #     role: applications
+  #     node-class: "app-node"
+  #     lifecycle: OnDemand
+  #   tags:
+  #     nodegroup-role: applications
+  #     k8s.io/cluster-autoscaler/node-template/label/lifecycle: OnDemand
+  #     k8s.io/cluster-autoscaler/enabled: "true"
+  #     k8s.io/cluster-autoscaler/eksworkshop: "owned"
+  #   privateNetworking: true
+  #   disableIMDSv1: true
+  #   preBootstrapCommands:
+  #     - "jq -c '. + { \"imageGCHighThresholdPercent\": 80 }' /etc/kubernetes/kubelet/kubelet-config.json > tmp.$$.json && mv tmp.$$.json /etc/kubernetes/kubelet/kubelet-config.json"
+  #     - "jq -c '. + { \"imageGCLowThresholdPercent\": 70 }' /etc/kubernetes/kubelet/kubelet-config.json > tmp.$$.json && mv tmp.$$.json /etc/kubernetes/kubelet/kubelet-config.json"
+  #     - "sed -i '/^KUBELET_EXTRA_ARGS=/a KUBELET_EXTRA_ARGS+=\" --feature-gates=CSIMigrationAWS=true \"' /etc/eks/bootstrap.sh"
